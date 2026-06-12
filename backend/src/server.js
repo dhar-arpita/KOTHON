@@ -4,6 +4,9 @@ const cors    = require('cors');
 const helmet  = require('helmet');
 const morgan  = require('morgan');
 
+const connectDB = require('./config/db');
+connectDB();
+
 const authRoutes = require('./routes/auth.routes');
 const { notFound, errorHandler } = require('./middleware/error.middleware');
 
