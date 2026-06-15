@@ -82,7 +82,13 @@ export default function Sidebar({ onRoomSelect, selectedRoom }) {
                 {searchQuery.trim() ? (
                     searchResults.length > 0 ? (
                         searchResults.map(u => (
-                            <div key={u._id} className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-[#202c33]">
+                            <div key={u._id} onClick={async () => {
+                                const res = await roomAPI.getOrCreate({ userId: u._id });
+                                onRoomSelect(res.data.ExistedRoom);
+                                setSearchQuery('');
+                                setSearchResults([]);
+                            }} className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-[#202c33]">
+
                                 <div className="w-12 h-12 rounded-full bg-[#6b7c85] flex items-center justify-center text-white font-bold">
                                     {u.username[0].toUpperCase()}
                                 </div>
@@ -131,7 +137,7 @@ export default function Sidebar({ onRoomSelect, selectedRoom }) {
             </div>
 
             {/* Navigation */}
-            <div className="flex justify-around items-center py-3 bg-[#202c33] border-t border-[#2a3942]">
+            <div className="flex justify-around items-center py-3 bg-[#202c33] border-t border-[#2a3942] h-16">
                 <button className="flex flex-col items-center gap-1 text-xs text-[#00a884]">
                     <img src="/chats.svg" className="w-6 h-6 invert" />
                     <span>Chats</span>

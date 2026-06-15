@@ -9,29 +9,37 @@ export default function ChatWindow({ room, onBack }) {
     const [messages, setMessages] = useState([]);
     const [content, setContent] = useState('');
     const messagesEndRef = useRef(null);
+    const [isTyping, setIsTyping] = useState(false);
+    const typingTimeoutRef = useRef(null);
 
     useEffect(() => {
-    if (!room || !socket) return;
-    socket.emit('joinRoom', room._id);
-    
-    const handleLoad = (msgs) => setMessages(msgs);
-    const handleNew = (msg) => {
-        setMessages(prev => [...prev.filter(m => !m.pending), msg]);
-    };
-    
-    socket.on('loadMessages', handleLoad);
-    socket.on('newMessage', handleNew);
+        if (!room || !socket) return;
+        socket.emit('joinRoom', room._id);
 
-    return () => {
-        socket.emit('leaveRoom', room._id);
-        socket.off('loadMessages', handleLoad);
-        socket.off('newMessage', handleNew);
-    };
-}, [room, socket]);
+        const handleLoad = (msgs) => setMessages(msgs);
+        const handleNew = (msg) => {
+            setMessages(prev => [...prev.filter(m => !m.pending), msg]);
+        };
+
+        socket.on('loadMessages', handleLoad);
+        socket.on('newMessage', handleNew);
+
+        socket.on('userTyping', () => setIsTyping(true));
+        socket.on('userStopTyping', () => setIsTyping(false));
+
+        return () => {
+            socket.emit('leaveRoom', room._id);
+            socket.off('loadMessages', handleLoad);
+            socket.off('newMessage', handleNew);
+
+            socket.off('userTyping');
+            socket.off('userStopTyping');
+        };
+    }, [room, socket]);
 
     useEffect(() => {
-            messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-        }, [messages]);
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, [messages]);
 
     if (!room) {
         return (
@@ -61,6 +69,7 @@ export default function ChatWindow({ room, onBack }) {
 
         // তারপর server এ পাঠাও
         socket.emit('sendMessage', { roomId: room._id, content, type: 'text' });
+        socket.emit('stopTypingIndicator', { roomId: room._id });
         setContent('');
 
     };
@@ -86,7 +95,7 @@ export default function ChatWindow({ room, onBack }) {
 
             {/* Messages */}
             <div
-                className="flex-1 overflow-y-auto px-6 py-4"
+                className="flex-1 overflow-y-auto px-6 py-4 overflow-x-hidden"
                 style={{ backgroundColor: '#efeae2' }}
             >
                 {messages.length === 0 && (
@@ -100,7 +109,7 @@ export default function ChatWindow({ room, onBack }) {
                     const isMe = msg.sender._id === user.id;
                     return (
                         <div key={msg._id} className={`flex mb-1.5 ${isMe ? 'justify-end' : 'justify-start'}`}>
-                            <div className={`max-w-sm px-3 py-2 rounded-lg text-sm shadow-sm relative
+                            <div className={`max-w-[70%] px-3 py-2 rounded-lg text-sm shadow-sm relative break-all
                                 ${isMe ? 'bg-[#d9fdd3] text-gray-800 rounded-tr-none' : 'bg-white text-gray-800 rounded-tl-none'}`}
                             >
                                 <p className="leading-relaxed">{msg.content}</p>
@@ -113,37 +122,72 @@ export default function ChatWindow({ room, onBack }) {
                     );
                 })}
                 <div ref={messagesEndRef} />
-                </div>
-                {/* Input */}
-                <div className="flex items-center gap-2 px-3 py-2 bg-[#202c33]">
-                    <button className="text-[#8696a0] hover:text-white transition-colors p-2">
-                        <img src="/plus.svg" className="w-6 h-6" />
-                    </button>
-
-                    <div className="flex-1 flex items-center bg-[#2a3942] rounded-lg px-4 py-2.5 gap-2">
-                        <input
-                            type="text"
-                            placeholder="Type a message"
-                            className="flex-1 bg-transparent text-sm outline-none text-[#d1d7db] placeholder-[#8696a0]"
-                            value={content}
-                            onChange={(e) => setContent(e.target.value)}
-                            onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
-                        />
-                        <button className="text-[#8696a0] hover:text-white">
-                            <img src="/emoji.svg" className="w-5 h-5 opacity-70" />
-                        </button>
-                    </div>
-
-                    {content.trim() ? (
-                        <button onClick={sendMessage} className="bg-[#00a884] p-2.5 rounded-full hover:bg-[#02bf97] transition-colors">
-                            <img src="/send.png" className="w-5 h-5" />
-                        </button>
-                    ) : (
-                        <button className="bg-[#00a884] p-2.5 rounded-full">
-                            <img src="/mic.svg" className="w-5 h-5" />
-                        </button>
-                    )}
-                </div>
             </div>
-            );
+
+            {/* Typing Indicator */}
+            {/* Typing Indicator */}
+            {isTyping && (
+                <div className="px-4 py-1" style={{ backgroundColor: '#efeae2' }}>
+                    <div className="inline-flex items-center gap-1.5  bg-'#adada9 px-3 py-2 rounded-lg rounded-tl-none shadow-sm">
+                        <p className='text-[#8696a0] text-sm'>typing</p>
+                        <span className="w-2 h-2 bg-[#8696a0] rounded-full animate-bounce [animation-delay:0ms]" />
+                        <span className="w-2 h-2 bg-[#8696a0] rounded-full animate-bounce [animation-delay:150ms]" />
+                        <span className="w-2 h-2 bg-[#8696a0] rounded-full animate-bounce [animation-delay:300ms]" />
+                    </div>
+                </div>
+            )}
+
+
+            {/* Input */}
+            <div className="flex items-center gap-2 px-3 py-2 bg-[#202c33] h-16">
+                <button className="text-[#8696a0] hover:text-white transition-colors p-2">
+                    <img src="/plus.png" className="w-6 h-6" />
+                </button>
+
+                <div className="flex-1 flex items-center bg-[#2a3942] rounded-lg px-4 py-2.5 gap-2">
+
+                    <input
+                        type="text"
+                        placeholder="Type a message"
+                        className="flex-1 bg-transparent text-sm outline-none text-[#d1d7db] placeholder-[#8696a0]"
+                        value={content}
+                        onChange={(e) => {
+                            setContent(e.target.value);
+
+                            if (e.target.value === '') {
+                                socket.emit('stopTypingIndicator', { roomId: room._id });
+                                clearTimeout(typingTimeoutRef.current);
+                                return;
+                            }
+                            socket.emit('typingIndicator', { roomId: room._id });
+
+
+                            if (typingTimeoutRef.current) {
+                                clearTimeout(typingTimeoutRef.current);
+                            }
+
+
+                            typingTimeoutRef.current = setTimeout(() => {
+                                socket.emit('stopTypingIndicator', { roomId: room._id });
+                            }, 10000);
+                        }}
+                        onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
+                    />
+                    <button className="text-[#8696a0] hover:text-white">
+                        <img src="/emoji.svg" className="w-5 h-5 opacity-70" />
+                    </button>
+                </div>
+
+                {content.trim() ? (
+                    <button onClick={sendMessage} className="bg-[#00a884] p-2.5 rounded-full hover:bg-[#02bf97] transition-colors">
+                        <img src="/send.png" className="w-5 h-5" />
+                    </button>
+                ) : (
+                    <button className="bg-[#00a884] p-2.5 rounded-full">
+                        <img src="/mic.svg" className="w-5 h-5" />
+                    </button>
+                )}
+            </div>
+        </div>
+    );
 }
