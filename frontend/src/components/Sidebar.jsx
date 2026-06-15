@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { roomAPI } from '../services/api';
+import { roomAPI, userAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useSocket } from '../context/SocketContext';
 
@@ -7,6 +7,8 @@ export default function Sidebar({ onRoomSelect, selectedRoom }) {
     const { user, logout } = useAuth();
     const [rooms, setRooms] = useState([]);
     const { socket } = useSocket();
+    const [searchQuery, setSearchQuery] = useState('');
+    const [searchResults, setSearchResults] = useState([]);
 
     useEffect(() => {
         roomAPI.getMyChats()
@@ -14,19 +16,35 @@ export default function Sidebar({ onRoomSelect, selectedRoom }) {
             .catch(err => console.error(err));
     }, []);
 
-   useEffect(() => {
-    if (!socket) return;
-    
-    const handleNew = (msg) => {
-        const msgRoom = msg.room._id || msg.room;
-        setRooms(prev => prev.map(room => 
-            room._id === msgRoom ? { ...room, lastMessage: msg } : room
-        ));
-    };
-    
-    socket.on('newMessage', handleNew);
-    return () => socket.off('newMessage', handleNew);
-}, [socket]);
+    useEffect(() => {
+        if (!socket) return;
+
+        const handleNew = (msg) => {
+            const msgRoom = msg.room._id || msg.room;
+            setRooms(prev => prev.map(room =>
+                room._id === msgRoom ? { ...room, lastMessage: msg } : room
+            ));
+        };
+
+        socket.on('newMessage', handleNew);
+        return () => socket.off('newMessage', handleNew);
+    }, [socket]);
+
+
+    useEffect(() => {
+        if (!searchQuery.trim()) {
+            setSearchResults([]);
+            return;
+        }
+
+        const timer = setTimeout(() => {
+            userAPI.search(searchQuery)
+                .then(res => setSearchResults(res.data.users))
+                .catch(err => console.error(err));
+        }, 300);
+
+        return () => clearTimeout(timer);
+    }, [searchQuery]);
 
     return (
         <div className="flex flex-col h-full bg-[#111b21]">
@@ -53,42 +71,63 @@ export default function Sidebar({ onRoomSelect, selectedRoom }) {
                         type="text"
                         placeholder="Search or start new chat"
                         className="bg-transparent text-sm outline-none flex-1 text-[#d1d7db] placeholder-[#8696a0]"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
                     />
                 </div>
             </div>
 
             {/* Chat list */}
             <div className="flex-1 overflow-y-auto">
-                {rooms.length === 0 && (
-                    <p className="text-center text-[#8696a0] text-sm mt-8">No chats yet</p>
-                )}
-                {rooms.map(room => {
-                    const otherMember = room.members.find(m => m.user._id !== user.id);
-                    const isSelected = selectedRoom?._id === room._id;
-                    return (
-                        <div
-                            key={room._id}
-                            onClick={() => onRoomSelect(room)}
-                            className={`flex items-center gap-3 px-4 py-3 cursor-pointer border-b border-[#202c33] transition-colors
-                                ${isSelected ? 'bg-[#2a3942]' : 'hover:bg-[#202c33]'}`}
-                        >
-                            <div className="w-12 h-12 rounded-full bg-[#6b7c85] flex items-center justify-center text-white font-bold flex-shrink-0">
-                                {otherMember?.user.username[0].toUpperCase()}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                                <div className="flex justify-between items-center">
-                                    <span className="font-medium text-sm text-[#e9edef]">
-                                        {otherMember?.nickname || otherMember?.user.username}
-                                    </span>
-                                    <span className="text-xs text-[#8696a0]">12:30</span>
+                {searchQuery.trim() ? (
+                    searchResults.length > 0 ? (
+                        searchResults.map(u => (
+                            <div key={u._id} className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-[#202c33]">
+                                <div className="w-12 h-12 rounded-full bg-[#6b7c85] flex items-center justify-center text-white font-bold">
+                                    {u.username[0].toUpperCase()}
                                 </div>
-                                <p className="text-xs text-[#8696a0] truncate mt-0.5">
-                                    {room.lastMessage?.content || 'No messages yet'}
-                                </p>
+                                <div>
+                                    <p className="text-sm text-[#e9edef]">{u.username}</p>
+                                    <p className="text-xs text-[#8696a0]">{u.mobileNo}</p>
+                                </div>
                             </div>
-                        </div>
-                    );
-                })}
+                        ))
+                    ) : (
+                        <p className="text-center text-[#8696a0] text-sm mt-8">No users found</p>
+                    )
+                ) : (
+                    rooms.map(room => {
+                        const otherMember = room.members.find(m => m.user._id !== user.id);
+                        const isSelected = selectedRoom?._id === room._id;
+                        return (
+                            <div
+                                key={room._id}
+                                onClick={() => onRoomSelect(room)}
+                                className={`flex items-center gap-3 px-4 py-3 cursor-pointer border-b border-[#202c33] transition-colors
+                    ${isSelected ? 'bg-[#2a3942]' : 'hover:bg-[#202c33]'}`}
+                            >
+                                <div className="w-12 h-12 rounded-full bg-[#6b7c85] flex items-center justify-center text-white font-bold flex-shrink-0">
+                                    {otherMember?.user.username[0].toUpperCase()}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex justify-between items-center">
+                                        <span className="font-medium text-sm text-[#e9edef]">
+                                            {otherMember?.nickname || otherMember?.user.username}
+                                        </span>
+                                        <span className="text-xs text-[#8696a0]">
+                                            {room.lastMessage?.createdAt
+                                                ? new Date(room.lastMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                                                : ''}
+                                        </span>
+                                    </div>
+                                    <p className="text-xs text-[#8696a0] truncate mt-0.5">
+                                        {room.lastMessage?.content || 'No messages yet'}
+                                    </p>
+                                </div>
+                            </div>
+                        );
+                    })
+                )}
             </div>
 
             {/* Navigation */}
