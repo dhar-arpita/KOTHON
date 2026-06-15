@@ -31,8 +31,14 @@ module.exports = (io) => {
 
         await User.findByIdAndUpdate(socket.userId, { isOnline: true });
 
-        socket.on('joinRoom', roomId => {
+        socket.on('joinRoom', async roomId => {
             socket.join(roomId);
+
+            const messages = await Message.find({ room: roomId })
+                .populate('sender', 'username avatar')
+                .sort({ createdAt: 1 });
+
+            socket.emit('loadMessages', messages);
             console.log(`Socket ${socket.id} joined room ${roomId}`);
         });
 

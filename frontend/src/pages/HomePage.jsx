@@ -1,33 +1,31 @@
 import { useAuth } from '../context/AuthContext';
+import Sidebar from '../components/Sidebar';
+import { useState } from 'react';
+import ChatWindow from '../components/ChatWindow';
 
 export default function HomePage() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
+  const [selectedRoom, setSelectedRoom] = useState(null);
 
-  return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-2xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-2xl font-semibold text-gray-900">
-              Hello, {user?.username} 👋
-            </h1>
-            <p className="text-gray-500 text-sm mt-1">{user?.email}</p>
-          </div>
-          <button
-            onClick={logout}
-            className="px-4 py-2 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors"
-          >
-            Sign out
-          </button>
+ return (
+    <div className="flex h-screen bg-[#111b21]">
+        {/* Sidebar — mobile এ selectedRoom না থাকলে দেখাবে */}
+        <div className={`
+            w-full md:w-80 flex flex-col border-r border-[#2a3942]
+            ${selectedRoom ? 'hidden md:flex' : 'flex'}
+        `}>
+            <Sidebar onRoomSelect={setSelectedRoom} selectedRoom={selectedRoom} />
         </div>
 
-        {/* তোমার actual page content এখানে বসাও */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-6">
-          <p className="text-gray-400 text-sm text-center">
-            Your app starts here. Replace this with your content.
-          </p>
+        {/* ChatWindow — mobile এ selectedRoom থাকলে দেখাবে */}
+        <div className={`
+            flex-1
+            ${selectedRoom ? 'flex' : 'hidden md:flex'}
+            flex-col
+        `}>
+            <ChatWindow room={selectedRoom} onBack={() => setSelectedRoom(null)} />
         </div>
-      </div>
     </div>
-  );
+);
 }
+

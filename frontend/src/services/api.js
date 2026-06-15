@@ -36,6 +36,14 @@ export const authAPI = {
   getMe:    ()     => api.get('/auth/me'),
 };
 
+export const roomAPI = {
+    getOrCreate: (data) => api.post('/room/createOrLoad', data),
+    getMyChats: () => api.get('/room/getMyChats'),
+};
+
+export const userAPI = {
+    search: (q) => api.get(`/users/search?q=${q}`),
+};
 // ─── নতুন resource যোগ করো এখানে ─────────────────────
 // export const userAPI = {
 //   getAll:  ()       => api.get('/users'),

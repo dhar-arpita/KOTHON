@@ -19,11 +19,12 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   // ─── Auth actions ─────────────────────────────────────
-  const login = async (email, password) => {
-    const res = await authAPI.login({ email, password });
+
+  const login = async (loginInput, password) => {
+    const res = await authAPI.login({ loginInput, password });
     localStorage.setItem('token', res.data.token);
     setUser(res.data.user);
-  };
+};
 
   const register = async (username, email, password) => {
     const res = await authAPI.register({ username, email, password });
@@ -49,3 +50,5 @@ export const useAuth = () => {
   if (!ctx) throw new Error('useAuth must be used inside AuthProvider');
   return ctx;
 };
+
+

@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { ProtectedRoute, PublicRoute } from './components/layout/ProtectedRoute';
+import { SocketProvider } from './context/SocketContext';
 
 // Pages
 import LoginPage    from './pages/LoginPage';
@@ -11,6 +12,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
+        <SocketProvider>
         <Routes>
           {/* Public — login না করলেই দেখা যাবে */}
           <Route path="/login" element={
@@ -30,6 +32,7 @@ export default function App() {
             <ProtectedRoute><ProfilePage /></ProtectedRoute>
           }/> */}
         </Routes>
+        </SocketProvider>
       </AuthProvider>
     </BrowserRouter>
   );

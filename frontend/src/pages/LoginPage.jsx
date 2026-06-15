@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 
 export default function LoginPage() {
   const { login } = useAuth();
-  const [form,   setForm]   = useState({ email: '', password: '' });
+  const [form, setForm] = useState({ loginInput: '', password: '' });
   const [error,  setError]  = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -16,7 +16,7 @@ export default function LoginPage() {
     setError('');
     setLoading(true);
     try {
-      await login(form.email, form.password);
+      await login(form.loginInput, form.password);
       // AuthContext login() success হলে App.jsx ProtectedRoute redirect করবে
     } catch (err) {
       setError(err.response?.data?.message || 'Something went wrong');
@@ -41,10 +41,10 @@ export default function LoginPage() {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
             <input
-              type="email" name="email" required
-              value={form.email} onChange={handleChange}
+              type="text" name="loginInput" required
+              value={form.loginInput} onChange={handleChange}
               className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="you@example.com"
+              placeholder="Email Or mobileNo"
             />
           </div>
           <div>
