@@ -26,11 +26,12 @@ export const AuthProvider = ({ children }) => {
     setUser(res.data.user);
 };
 
-  const register = async (username, email, password) => {
-    const res = await authAPI.register({ username, email, password });
+ 
+const register = async (username,  mobileNo,email, password) => {
+    const res = await authAPI.register({ username, email, mobileNo, password });
     localStorage.setItem('token', res.data.token);
     setUser(res.data.user);
-  };
+};
 
   const logout = () => {
     localStorage.removeItem('token');

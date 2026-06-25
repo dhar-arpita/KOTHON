@@ -21,15 +21,23 @@ export default function Sidebar({ onRoomSelect, selectedRoom }) {
 
         const handleNew = (msg) => {
             const msgRoom = msg.room._id || msg.room;
-            setRooms(prev => prev.map(room =>
-                room._id === msgRoom ? { ...room, lastMessage: msg } : room
-            ));
+            setRooms(prev => {
+                const exists = prev.find(r => r._id === msgRoom);
+                if (exists) {
+                    return prev.map(room =>
+                        room._id === msgRoom ? { ...room, lastMessage: msg } : room
+                    );
+                } else {
+                    roomAPI.getMyChats()
+                        .then(res => setRooms(res.data.rooms));
+                    return prev;
+                }
+            });
         };
 
         socket.on('newMessage', handleNew);
         return () => socket.off('newMessage', handleNew);
     }, [socket]);
-
 
     useEffect(() => {
         if (!searchQuery.trim()) {
@@ -45,6 +53,15 @@ export default function Sidebar({ onRoomSelect, selectedRoom }) {
 
         return () => clearTimeout(timer);
     }, [searchQuery]);
+
+    const handleSearchClick = async (clickedUser) => {
+        const res = await roomAPI.getOrCreate({ user: clickedUser._id });
+        onRoomSelect(res.data.room);
+        setSearchQuery('');
+        setSearchResults([]);
+        const roomsRes = await roomAPI.getMyChats();
+        setRooms(roomsRes.data.rooms);
+    };
 
     return (
         <div className="flex flex-col h-full bg-[#111b21]">
@@ -82,13 +99,7 @@ export default function Sidebar({ onRoomSelect, selectedRoom }) {
                 {searchQuery.trim() ? (
                     searchResults.length > 0 ? (
                         searchResults.map(u => (
-                            <div key={u._id} onClick={async () => {
-                                const res = await roomAPI.getOrCreate({ userId: u._id });
-                                onRoomSelect(res.data.ExistedRoom);
-                                setSearchQuery('');
-                                setSearchResults([]);
-                            }} className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-[#202c33]">
-
+                            <div key={u._id} onClick={() => handleSearchClick(u)} className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-[#202c33]">
                                 <div className="w-12 h-12 rounded-full bg-[#6b7c85] flex items-center justify-center text-white font-bold">
                                     {u.username[0].toUpperCase()}
                                 </div>
@@ -110,15 +121,15 @@ export default function Sidebar({ onRoomSelect, selectedRoom }) {
                                 key={room._id}
                                 onClick={() => onRoomSelect(room)}
                                 className={`flex items-center gap-3 px-4 py-3 cursor-pointer border-b border-[#202c33] transition-colors
-                    ${isSelected ? 'bg-[#2a3942]' : 'hover:bg-[#202c33]'}`}
+                                    ${isSelected ? 'bg-[#2a3942]' : 'hover:bg-[#202c33]'}`}
                             >
                                 <div className="w-12 h-12 rounded-full bg-[#6b7c85] flex items-center justify-center text-white font-bold flex-shrink-0">
-                                    {otherMember?.user.username[0].toUpperCase()}
+                                    {otherMember?.user?.username?.[0]?.toUpperCase() || '?'}
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <div className="flex justify-between items-center">
                                         <span className="font-medium text-sm text-[#e9edef]">
-                                            {otherMember?.nickname || otherMember?.user.username}
+                                            {otherMember?.nickname || otherMember?.user?.username || 'Unknown'}
                                         </span>
                                         <span className="text-xs text-[#8696a0]">
                                             {room.lastMessage?.createdAt

@@ -4,8 +4,8 @@ import { useAuth } from '../context/AuthContext';
 
 export default function RegisterPage() {
   const { register } = useAuth();
-  const [form,    setForm]    = useState({ username: '', email: '', password: '' });
-  const [error,   setError]   = useState('');
+  const [form, setForm] = useState({ username: '', mobileNo: '', email: '', password: '' });
+  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleChange = e =>
@@ -16,7 +16,7 @@ export default function RegisterPage() {
     setError('');
     setLoading(true);
     try {
-      await register(form.username, form.email, form.password);
+      await register(form.username, form.mobileNo, form.email, form.password);
     } catch (err) {
       const errors = err.response?.data?.errors;
       setError(errors ? errors[0].message : err.response?.data?.message || 'Something went wrong');
@@ -47,10 +47,20 @@ export default function RegisterPage() {
               placeholder="yourname"
             />
           </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Mobile No</label>
+            <input
+              type="text" name="mobileNo" required
+              value={form.mobileNo} onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="01XXXXXXXXX"
+            />
+          </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
             <input
-              type="email" name="email" required
+              type="email" name="email"
               value={form.email} onChange={handleChange}
               className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="you@example.com"
