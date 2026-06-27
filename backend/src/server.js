@@ -56,6 +56,7 @@ const server = http.createServer(app); //wrapping express app with http server
 const io = new Server(server,{
   cors:{origin:process.env.CLIENT_URL || '*'}
 })
+app.set('io', io);
 
 const initSocket = require('./socket/socket.handler');
 initSocket(io);

@@ -32,17 +32,22 @@ api.interceptors.response.use(
 // ─── Auth calls ────────────────────────────────────────
 export const authAPI = {
   register: (data) => api.post('/auth/register', data),
-  login:    (data) => api.post('/auth/login', data),
-  getMe:    ()     => api.get('/auth/me'),
+  login: (data) => api.post('/auth/login', data),
+  getMe: () => api.get('/auth/me'),
 };
 
 export const roomAPI = {
-    getOrCreate: (data) => api.post('/room/createOrLoad', data),
-    getMyChats: () => api.get('/room/getMyChats'),
+  getOrCreate: (data) => api.post('/room/createOrLoad', data),
+  getMyChats: () => api.get('/room/getMyChats'),
+  createGroup: (data) => api.post('/room/createGroup', data),
+  exitGroup: (data) => api.post(`/room/exit`,data),
+  removeMember: (data) => api.post(`/room/remove`,data),
+  makeAdmin: (data) => api.post(`/room/make-admin`,data),
+  addMember:(data)=> api.post('/room/addMember',data),
 };
 
 export const userAPI = {
-    search: (q) => api.get(`/users/search?q=${q}`),
+  search: (q) => api.get(`/users/search?q=${q}`),
 };
 // ─── নতুন resource যোগ করো এখানে ─────────────────────
 // export const userAPI = {

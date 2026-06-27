@@ -7,7 +7,7 @@ export default function HomePage() {
   const { user } = useAuth();
   const [selectedRoom, setSelectedRoom] = useState(null);
 
- return (
+  return (
     <div className="flex h-screen bg-[#111b21]">
         {/* Sidebar — mobile এ selectedRoom না থাকলে দেখাবে */}
         <div className={`
@@ -23,9 +23,12 @@ export default function HomePage() {
             ${selectedRoom ? 'flex' : 'hidden md:flex'}
             flex-col
         `}>
-            <ChatWindow room={selectedRoom} onBack={() => setSelectedRoom(null)} />
+            <ChatWindow
+                room={selectedRoom}
+                onBack={() => setSelectedRoom(null)}
+                onRoomUpdate={setSelectedRoom}
+            />
         </div>
     </div>
-);
+  );
 }
-
